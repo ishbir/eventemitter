@@ -10,11 +10,11 @@ func ExampleEventEmitter() {
 
 	emitter.On("hello", func() {
 		fmt.Println("Hello World")
-	})
+	}, 1)
 
 	emitter.On("hello", func() {
 		fmt.Println("Hello Hello World")
-	})
+	}, 2)
 
 	// Wait until all handlers have finished
 	<-emitter.Emit("hello")
@@ -28,10 +28,9 @@ func ExampleEventEmitter_Emit() {
 
 	emitter.On("hello", func(name string) {
 		fmt.Printf("Hello World %s\n", name)
-	})
+	}, 3)
 
 	<-emitter.Emit("hello", "John")
 	// Output:
 	// Hello World John
 }
-

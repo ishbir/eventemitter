@@ -1,21 +1,22 @@
 # An EventEmitter for Go
 
-**Build Status:** ![Build Status by goci.me](http://goci.me/project/image/github.com/CHH/eventemitter)
+This package is a modification of eventemitter package by [CHH](https://github.com/CHH/eventemitter). Modifications are:
+- Ability to remove select event listeners.
 
 ## Install
 
 With `go get`:
 
-    % go get github.com/CHH/eventemitter
+    % go get github.com/ishbir/eventemitter
 
 ## Usage
 
-_For more information please also see the [Package Docs](http://go.pkgdoc.org/github.com/CHH/eventemitter)._
+_For more information please also see the [Package Docs](http://go.pkgdoc.org/github.com/ishbir/eventemitter)._
 
 A new EventEmitter is created by the `New` function.
 
 ```go
-import "github.com/CHH/eventemitter"
+import "github.com/ishbir/eventemitter"
 
 func main() {
     emitter := eventemitter.New()
@@ -28,7 +29,7 @@ Listeners can be bound to event names with the `On` method:
 ```go
 emitter.On("foo", func(name string) {
     fmt.Printf("Hello World %s", name)
-})
+}, 1)
 ```
 
 An event can be triggered by calling the `Emit` method:
@@ -85,7 +86,7 @@ func NewServer() *Server {
     // All functions of the EventEmitter are available:
     s.On("foo", func() {
         
-    })
+    }, 2)
 }
 ```
 
@@ -93,4 +94,3 @@ func NewServer() *Server {
 
 EventEmitter is distributed under the Terms of the MIT License. See
 the bundled file `LICENSE.txt` for more information.
-

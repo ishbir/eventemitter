@@ -13,7 +13,12 @@ type Response struct {
 }
 
 type EventEmitter struct {
-	events map[string][]reflect.Value
+	events map[string][]Listener
+}
+
+type Listener struct {
+	Callback reflect.Value
+	ID       interface{}
 }
 
 func New() *EventEmitter {
@@ -26,35 +31,60 @@ func New() *EventEmitter {
 // Allocates the EventEmitters memory. Has to be called when
 // embedding an EventEmitter in another Type.
 func (self *EventEmitter) Init() {
-	self.events = make(map[string][]reflect.Value)
+	self.events = make(map[string][]Listener)
 }
 
-func (self *EventEmitter) Listeners(event string) []reflect.Value {
+func (self *EventEmitter) Listeners(event string) []Listener {
 	return self.events[event]
 }
 
 // Alias to AddListener.
-func (self *EventEmitter) On(event string, listener interface{}) {
-	self.AddListener(event, listener)
+func (self *EventEmitter) On(event string, listener interface{}, id interface{}) {
+	self.AddListener(event, listener, id)
 }
 
-// AddListener adds an event listener on the given event name.
-func (self *EventEmitter) AddListener(event string, listener interface{}) {
+// AddListener adds an event listener on the given event name. id is used to
+// keep track of different listeners and distinguish one from the other. If a
+// listener with a duplicate id is added, the second one is ignored.
+func (self *EventEmitter) AddListener(event string, listener interface{}, id interface{}) {
 	// Check if the event exists, otherwise initialize the list
 	// of handlers for this event.
 	if _, exists := self.events[event]; !exists {
-		self.events[event] = []reflect.Value{}
+		self.events[event] = []Listener{}
 	}
 
-	if l, ok := listener.(reflect.Value); ok {
-		self.events[event] = append(self.events[event], l)
-	} else {
-		l := reflect.ValueOf(listener)
-		self.events[event] = append(self.events[event], l)
+	// Check if the listener id exists.
+	for _, x := range self.events[event] {
+		if x.ID == id { // match found
+			return
+		}
+	}
+
+	var l reflect.Value
+	l, ok := listener.(reflect.Value)
+	if !ok {
+		l = reflect.ValueOf(listener)
+	}
+	x := Listener{
+		Callback: l,
+		ID:       id,
+	}
+	self.events[event] = append(self.events[event], x)
+}
+
+// RemoveListener removes the listener listening to `event' with the specified
+// id.
+func (self *EventEmitter) RemoveListener(event string, id interface{}) {
+	listeners := self.events[event]
+	for i, x := range listeners {
+		if x.ID == id { // we got a match, so remove
+			self.events[event] = append(listeners[:i], listeners[i+1:]...)
+		}
+		return
 	}
 }
 
-// Removes all listeners from the given event.
+// RemoveListeners removes all listeners from the given event.
 func (self *EventEmitter) RemoveListeners(event string) {
 	delete(self.events, event)
 }
@@ -86,7 +116,7 @@ func (self *EventEmitter) Emit(event string, argv ...interface{}) <-chan *Respon
 			}
 
 			c <- &Response{EventName: event, Ret: ret}
-		}(listener)
+		}(listener.Callback)
 	}
 
 	return c
